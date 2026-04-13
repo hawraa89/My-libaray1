@@ -1,0 +1,459 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+
+interface Book {
+  id: string
+  title: string
+  pdf: string
+  cover: string
+  size: number
+  lastModified: string
+}
+
+interface BooksResponse {
+  books: Book[]
+  total: number
+  withCovers: number
+  totalSize: number
+}
+
+import CategoryFilter from '../components/CategoryFilter'
+
+export default function Home() {
+  const [books, setBooks] = useState<Book[]>([])
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [stats, setStats] = useState<{ total: number; withCovers: number; totalSize: number } | null>(null)
+
+  useEffect(() => {
+    // Simple hardcoded book list to bypass API loading issue
+    const hardcodedBooks: Book[] = [
+      {
+        id: 'alekhlaqiat_althaka_aalastinae',
+        title: 'alekhlaqiat_althaka_aalastinae',
+        pdf: '/books/alekhlaqiat_althaka_aalastinae.pdf',
+        cover: '/covers/alekhlaqiat_althaka_aalastinae.jpg',
+        size: 1118218,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alawram',
+        title: 'alawram',
+        pdf: '/books/alawram.pdf',
+        cover: '/covers/alawram.jpg',
+        size: 16303209,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'albyanat_aldkhma',
+        title: 'albyanat_aldkhma',
+        pdf: '/books/albyanat_aldkhma.pdf',
+        cover: '/covers/albyanat_aldkhma.jpg',
+        size: 1356842,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'altabsr_baltejara',
+        title: 'altabsr_baltejara',
+        pdf: '/books/altabsr_baltejara.pdf',
+        cover: '/covers/altabsr_baltejara.jpg',
+        size: 1048841,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'altarath_walthawra',
+        title: 'altarath_walthawra',
+        pdf: '/books/altarath_walthawra.pdf',
+        cover: '/covers/altarath_walthawra.jpg',
+        size: 3239773,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'altafekir_walistidal',
+        title: 'altafekir_walistidal',
+        pdf: '/books/altafekir_walistidal.pdf',
+        cover: '/covers/altafekir_walistidal.jpg',
+        size: 19227944,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'althawra_albydaa',
+        title: 'althawra_albydaa',
+        pdf: '/books/althawra_albydaa.pdf',
+        cover: '/covers/althawra_albydaa.jpg',
+        size: 1637291,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'althawra_almghdora',
+        title: 'althawra_almghdora',
+        pdf: '/books/althawra_almghdora.pdf',
+        cover: '/covers/althawra_almghdora.jpg',
+        size: 17160320,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alhamla_alfaransia_wakhroj_alfrancienin_min_masr',
+        title: 'alhamla_alfaransia_wakhroj_alfrancienin_min_masr',
+        pdf: '/books/alhamla_alfaransia_wakhroj_alfrancienin_min_masr.pdf',
+        cover: '/covers/alhamla_alfaransia_wakhroj_alfrancienin_min_masr.jpg',
+        size: 5535891,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'aldamagh_almobtkar',
+        title: 'aldamagh_almobtkar',
+        pdf: '/books/aldamagh_almobtkar.pdf',
+        cover: '/covers/aldamagh_almobtkar.jpg',
+        size: 43154105,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alaqlania',
+        title: 'alaqlania',
+        pdf: '/books/alaqlania.pdf',
+        cover: '/covers/alaqlania.jpg',
+        size: 17617804,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alfizya_alfalkia',
+        title: 'alfizya_alfalkia',
+        pdf: '/books/alfizya_alfalkia.pdf',
+        cover: '/covers/alfizya_alfalkia.jpg',
+        size: 19714506,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alfizya_walfalsfa',
+        title: 'alfizya_walfalsfa',
+        pdf: '/books/alfizya_walfalsfa.pdf',
+        cover: '/covers/alfizya_walfalsfa.jpg',
+        size: 7499883,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'tafael_mtalsl',
+        title: 'tafael_mtalsl',
+        pdf: '/books/tafael_mtalsl.pdf',
+        cover: '/covers/tafael_mtalsl.jpg',
+        size: 10345474,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'thaqafat_alntham_alaashwae',
+        title: 'thaqafat_alntham_alaashwae',
+        pdf: '/books/thaqafat_alntham_alaashwae.pdf',
+        cover: '/covers/thaqafat_alntham_alaashwae.jpg',
+        size: 2910338,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'dhakaa_astinae_motoafeq_maa_albashar',
+        title: 'dhakaa_astinae_motoafeq_maa_albashar',
+        pdf: '/books/dhakaa_astinae_motoafeq_maa_albashar.pdf',
+        cover: '/covers/dhakaa_astinae_mutoafeq_maa_albashar.jpg',
+        size: 16223300,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'shfaa',
+        title: 'shfaa',
+        pdf: '/books/shfaa.pdf',
+        cover: '/covers/shfaa.jpg',
+        size: 1739991,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'safqa_rabha_tawila_alajl',
+        title: 'safqa_rabha_tawila_alajl',
+        pdf: '/books/safqa_rabha_tawila_alajl.pdf',
+        cover: '/covers/safqa_rabha_tawila_alajl.jpg',
+        size: 27224631,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'alm_altashfir',
+        title: 'alm_altashfir',
+        pdf: '/books/alm_altashfir.pdf',
+        cover: '/covers/alm_altashfir.jpg',
+        size: 12891137,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'kashf_alhalqa_almfqoda_bayna_adyan_altaad_waltawhid',
+        title: 'kashf_alhalqa_almfqoda_bayna_adyan_altaad_waltawhid',
+        pdf: '/books/kashf_alhalqa_almfqoda_bayna_adyan_altaad_waltawhid.pdf',
+        cover: '/covers/kashf_alhalqa_almfqoda_bayna_adyan_altaad_waltawhid.jpg',
+        size: 13006973,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'nadhra_jadida_lalqran',
+        title: 'nadhra_jadida_lalqran',
+        pdf: '/books/nadhra_jadida_lalqran.pdf',
+        cover: '/covers/nadhra_jadida_lalqran.jpg',
+        size: 936885,
+        lastModified: new Date().toISOString()
+      },
+      {
+        id: 'naqd_alaiqtisad_alsyasi',
+        title: 'naqd_alaiqtisad_alsyasi',
+        pdf: '/books/naqd_alaiqtisad_alsyasi.pdf',
+        cover: '/covers/naqd_alaiqtisad_alsyasi.jpg',
+        size: 10145551,
+        lastModified: new Date().toISOString()
+      }
+    ]
+
+    setBooks(hardcodedBooks)
+    setFilteredBooks(hardcodedBooks)
+    setStats({
+      total: hardcodedBooks.length,
+      withCovers: hardcodedBooks.filter(book => book.cover).length,
+      totalSize: hardcodedBooks.reduce((total, book) => total + book.size, 0)
+    })
+    setLoading(false)
+  }, [])
+
+  // Filter functionality (search + category)
+  useEffect(() => {
+    let filtered = books.filter(book => 
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(book => {
+        const title = book.title.toLowerCase()
+        const id = book.id.toLowerCase()
+        
+        switch (selectedCategory) {
+          case 'technology':
+            return title.includes('dhakaa') || title.includes('alm_altashfir') || 
+                   title.includes('albyanat') || title.includes('dhakaa') ||
+                   id.includes('dhakaa') || id.includes('alm_altashfir')
+          case 'history':
+            return title.includes('altarath') || title.includes('althawra') || 
+                   title.includes('alhamla') || id.includes('altarath') || id.includes('althawra')
+          case 'philosophy':
+            return title.includes('falsfa') || title.includes('alaqlania') ||
+                   title.includes('tafekir') || id.includes('falsfa')
+          case 'science':
+            return title.includes('fizya') || title.includes('awram') ||
+                   title.includes('alm') || id.includes('fizya')
+          case 'religion':
+            return title.includes('din') || title.includes('qran') ||
+                   id.includes('din') || id.includes('qran')
+          case 'literature':
+            return title.includes('adab') || title.includes('sher') ||
+                   title.includes('qisas') || id.includes('adab')
+          case 'economics':
+            return title.includes('aiqtisad') || title.includes('tejara') ||
+                   id.includes('aiqtisad') || id.includes('tejara')
+          case 'politics':
+            return title.includes('siyasa') || title.includes('faransia') ||
+                   id.includes('siyasa')
+          default:
+            return true
+        }
+      })
+    }
+
+    setFilteredBooks(filtered)
+  }, [books, searchTerm, selectedCategory])
+
+  const formatFileSize = (bytes: number) => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    if (bytes === 0) return '0 Bytes'
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-wood">
+        <div className="text-gold text-2xl arabic-text">Loading...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-wood arabic-text">
+      {/* Header */}
+      <header className="wooden-shelf border-b-4 border-gold py-8 px-4">
+        <div className="container mx-auto">
+          <h1 className="royal-heading">Royal Library</h1>
+          <p className="text-gold-light text-center text-lg">
+            A collection of valuable books in a classic digital library
+          </p>
+        </div>
+      </header>
+      
+      {/* Category Filter */}
+      <CategoryFilter 
+        onCategoryChange={(category) => setSelectedCategory(category)}
+      />
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-12">
+        {/* Books Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
+          {filteredBooks.length > 0 ? (
+            filteredBooks.map((book, index) => (
+              <div key={book.id} className="relative group">
+                {/* Shelf Effect */}
+                <div className="wooden-shelf h-2 w-full mb-2 rounded-full"></div>
+                
+                {/* Book with Direct PDF Link */}
+                <Link 
+                  href={book.pdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <div className="book-cover cursor-pointer relative h-64 sm:h-72 bg-wood-dark gold-border p-2 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gold/50">
+                    {book.cover ? (
+                      <Image
+                        src={book.cover}
+                        alt={book.title}
+                        fill
+                        className="object-cover rounded"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gold p-4">
+                        <svg className="w-12 h-12 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804V12a1 1 0 11-2 0V4.804z" />
+                        </svg>
+                        <p className="text-xs text-center line-clamp-3">{book.title}</p>
+                      </div>
+                    )}
+                    
+                    {/* Enhanced Hover Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
+                      <div className="text-gold text-sm">
+                        <p className="font-bold mb-1 line-clamp-2">{book.title}</p>
+                        <div className="flex justify-between items-center text-xs text-gold-light">
+                          <span>{formatFileSize(book.size)}</span>
+                          <span className="bg-gold/20 px-2 py-1 rounded">Open PDF</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+                
+                {/* Enhanced Book Spine Effect */}
+                <div className="absolute left-0 top-2 bottom-2 w-1 bg-gradient-to-r from-black via-gold/20 to-transparent opacity-50"></div>
+                
+                {/* Book Title Below */}
+                <div className="mt-2 text-center">
+                  <p className="text-gold text-xs sm:text-sm font-medium line-clamp-2 px-2">
+                    {book.title}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <div className="text-gold-light mb-4">
+                <svg className="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804V12a1 1 0 11-2 0V4.804z" />
+                </svg>
+                <p className="text-xl text-gold">No results found</p>
+                <p className="text-gold-light mt-2">Try different words or check spelling</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Statistics */}
+        {stats && (
+          <div className="mt-12 sm:mt-16 wooden-shelf rounded-lg p-4 sm:p-6 gold-border">
+            <h2 className="text-xl sm:text-2xl font-bold text-gold mb-4 sm:mb-6 text-center">Library Statistics</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
+              <div className="text-gold-light p-3 sm:p-4">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{stats.total}</p>
+                <p className="text-sm sm:text-base">Total Books</p>
+              </div>
+              <div className="text-gold-light p-3 sm:p-4">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{stats.withCovers}</p>
+                <p className="text-sm sm:text-base">Books with Covers</p>
+              </div>
+              <div className="text-gold-light p-3 sm:p-4">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{formatFileSize(stats.totalSize)}</p>
+                <p className="text-sm sm:text-base">Total Size</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Book Modal */}
+      {selectedBook && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedBook(null)}
+        >
+          <div 
+            className="wooden-shelf rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto gold-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-2xl font-bold text-gold">{selectedBook.title}</h2>
+                <button
+                  onClick={() => setSelectedBook(null)}
+                  className="text-gold hover:text-gold-light text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {selectedBook.cover && (
+                <div className="relative h-64 mb-4 rounded overflow-hidden gold-border">
+                  <Image
+                    src={selectedBook.cover}
+                    alt={selectedBook.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              )}
+              
+              <div className="text-gold-light mb-4">
+                <p>Size: {formatFileSize(selectedBook.size)}</p>
+              </div>
+              
+              <div className="flex gap-3 mb-4">
+                <a
+                  href={selectedBook.pdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-gold text-wood-dark px-6 py-3 rounded-lg font-semibold hover:bg-gold-light transition-colors duration-300 text-center"
+                >
+                  Read Book
+                </a>
+                <a
+                  href={selectedBook.pdf}
+                  download={selectedBook.title + '.pdf'}
+                  className="flex-1 bg-gold-light text-wood-dark px-6 py-3 rounded-lg font-semibold hover:bg-gold transition-colors duration-300 text-center"
+                >
+                  Download PDF
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
